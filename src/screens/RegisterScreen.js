@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+
+export const API_URL = 'http://192.168.1.64:3000'; // Pastikan API URL sesuai dengan backend Anda
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
@@ -8,9 +10,37 @@ const RegisterScreen = () => {
   const [password, setPassword] = useState('');
   const navigation = useNavigation();
 
-  const handleRegister = () => {
-    // Implementasikan logika pendaftaran di sini
-    navigation.navigate('Login');
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', 'Registration successful', [
+          { text: 'OK', onPress: () => navigation.navigate('Login') },
+        ]);
+      } else {
+        Alert.alert('Error', data.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Error during registration:', error);
+      Alert.alert('Error', 'Error connecting to server');
+    }
   };
 
   return (

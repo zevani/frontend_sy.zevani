@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-export const API_URL = 'http://192.168.1.64:3000';  // Make sure it's the correct API URL
+export const API_URL = 'http://192.168.1.64:3000'; // Pastikan ini adalah URL API yang benar
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false); // State to handle loading
+  const [loading, setLoading] = useState(false); // State untuk loading
+  const [error, setError] = useState(''); // State untuk menampilkan error
   const navigation = useNavigation();
 
   const handleLogin = async () => {
-    setLoading(true); // Start loading when request is made
+    setError(''); // Reset pesan error setiap kali login dicoba
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+
+    // Validasi format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Invalid email format');
+      return;
+    }
+
+    setLoading(true); // Start loading ketika request dilakukan
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
@@ -24,16 +38,17 @@ const LoginScreen = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // If login is successful, navigate to Dashboard
-        navigation.navigate('Dashboard');
+        console.log('Login successful:', data); // Debugging log
+        navigation.navigate('Dashboard'); // Navigasi ke Dashboard jika login berhasil
       } else {
-        // Handle server errors or invalid credentials
-        alert(data.message || 'Invalid email or password');
+        console.log('Login failed:', data); // Debugging log
+        setError(data.message || 'Invalid email or password');
       }
     } catch (error) {
-      alert('Error connecting to server');
+      console.error('Error during login:', error); // Debugging log
+      setError('Error connecting to server');
     } finally {
-      setLoading(false); // Stop loading after request finishes
+      setLoading(false); // Stop loading setelah request selesai
     }
   };
 
@@ -46,12 +61,18 @@ const LoginScreen = () => {
         style={styles.illustration}
       />
       <Text style={styles.title}>Login</Text>
+
+      {/* Input Email */}
       <TextInput
         style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
+
+      {/* Input Password */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -59,6 +80,10 @@ const LoginScreen = () => {
         value={password}
         onChangeText={setPassword}
       />
+
+      {/* Pesan Error */}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
       {/* Login Button */}
       <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
         {loading ? (
@@ -69,8 +94,8 @@ const LoginScreen = () => {
       </TouchableOpacity>
 
       {/* Register Button */}
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.buttonText}>Register</Text>
+      <TouchableOpacity style={styles.buttonSecondary} onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.buttonTextSecondary}>Register</Text>
       </TouchableOpacity>
     </View>
   );
@@ -99,11 +124,15 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: '#aaa',
     borderRadius: 8,
     backgroundColor: '#fff',
+  },
+  error: {
+    color: 'red',
+    marginBottom: 16,
   },
   button: {
     width: '80%',
@@ -115,6 +144,19 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  buttonSecondary: {
+    width: '80%',
+    padding: 12,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    alignItems: 'center',
+  },
+  buttonTextSecondary: {
+    color: '#4CAF50',
     fontSize: 18,
     fontWeight: 'bold',
   },
